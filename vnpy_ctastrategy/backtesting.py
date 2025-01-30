@@ -173,7 +173,7 @@ class BacktestingEngine:
         self.history_data.clear()       # Clear previously loaded history data
 
         # Load 30 days of data each time and allow for progress update
-        total_days: int = (self.end - self.start).days
+        total_days: int = max(int((self.end - self.start).days), 1)
         progress_days: int = max(int(total_days / 10), 1)
         progress_delta: timedelta = timedelta(days=progress_days)
         interval_delta: timedelta = INTERVAL_DELTA_MAP[self.interval]
