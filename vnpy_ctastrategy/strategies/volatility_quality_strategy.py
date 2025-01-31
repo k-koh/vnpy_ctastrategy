@@ -174,7 +174,8 @@ class VolatilityQualityStrategy(CtaTemplate):
             max_p = max(h - l, max(h - c2, c2 - l))
             if (max_p != 0 and (h - l) != 0):
                 VQ = abs(((c-c2)/max_p+(c-o)/(h-l))*0.5)*((c-c2+(c-o))*0.5)
-                self.vqi_data[base_ix+i] = self.vqi_data[base_ix+i-1] if abs(VQ) < self.vqi_filter * self.currency_point else VQ
+                # self.vqi_data[base_ix+i] = self.vqi_data[base_ix+i-1] if abs(VQ) < self.vqi_filter * self.currency_point else VQ
+                self.vqi_data[base_ix+i] = VQ
 
     def on_order(self, order: OrderData):
         """
