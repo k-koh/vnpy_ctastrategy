@@ -138,13 +138,12 @@ class VolatilityQualityStrategy(CtaTemplate):
         # and Recalculate current bar
         max_key = max(self.vqi_data.keys())
         if ix not in self.vqi_data or ix == max_key:
-            size = self.vqi_start + 2
+            size = self.vqi_start + 1
             open_data = np.zeros(size)
             high_data = np.zeros(size)
             low_data = np.zeros(size)
             close_data = np.zeros(size)
-            # -1 for update previous fixed bar
-            base_ix = ix - self.vqi_start - 1
+            base_ix = ix - self.vqi_start
             open_data[0:size] = am.open[-size:]
             high_data[0:size] = am.high[-size:]
             low_data[0:size] = am.low[-size:]
