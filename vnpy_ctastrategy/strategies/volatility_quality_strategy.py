@@ -78,8 +78,7 @@ class VolatilityQualityStrategy(CtaTemplate):
         if not am.inited:
             return
 
-        ix = am.size - 1
-        self.vqi = self.get_vqi_value(ix)
+        self.vqi = self.get_vqi_value()
         self.pre_vqi = self.vqi
 
         # buy
@@ -99,18 +98,18 @@ class VolatilityQualityStrategy(CtaTemplate):
 
         self.put_event()
 
-    def get_vqi_value(self, ix: int) -> float:
+    def get_vqi_value(self) -> float:
         """"""
         maO_array = talib.MA(self.am.open,  timeperiod=self.vqi_period, matype=self.vqi_ma_method)
         maH_array = talib.MA(self.am.high,  timeperiod=self.vqi_period, matype=self.vqi_ma_method)
         maL_array = talib.MA(self.am.low,   timeperiod=self.vqi_period, matype=self.vqi_ma_method)
         maC_array = talib.MA(self.am.close, timeperiod=self.vqi_period, matype=self.vqi_ma_method)
         # calculate VQI
-        o = maO_array[ix]
-        h = maH_array[ix]
-        l = maL_array[ix]
-        c = maC_array[ix]
-        c2 = maC_array[ix - self.vqi_smoothing]
+        o = maO_array[-1]
+        h = maH_array[-1]
+        l = maL_array[-1]
+        c = maC_array[-1]
+        c2 = maC_array[-1-self.vqi_smoothing]
         max_p = max(h - l, max(h - c2, c2 - l))
         if (max_p != 0 and (h - l) != 0):
             VQ = abs(((c - c2) / max_p + (c - o) / (h - l)) * 0.5) * ((c - c2 + (c - o)) * 0.5)
