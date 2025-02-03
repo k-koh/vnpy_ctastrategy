@@ -2,6 +2,8 @@ from typing import Dict
 
 import numpy as np
 import talib
+from rqdatac.utils import convert_bar_to_multi_df
+from vnpy.trader.utility import ceil_to, floor_to
 from vnpy_ctastrategy import (
     CtaTemplate,
     StopOrder,
@@ -25,6 +27,7 @@ class VolatilityQualityStrategy(CtaTemplate):
     vqi_filter     = 1
     vqi_ma_method  = 3 # 3 = MODE_LWMA
     currency_point = 1 # 1 = 1点
+    pricetick      = 5.0
 
     # variables
     vqi = 0.0
@@ -65,7 +68,8 @@ class VolatilityQualityStrategy(CtaTemplate):
         """
         Callback of new tick data update.
         """
-        self.bg.update_tick(tick)
+        bar = self.bg.update_tick(tick)
+        self.on_bar(bar)
 
     def on_bar(self, bar: BarData):
         """
@@ -74,27 +78,35 @@ class VolatilityQualityStrategy(CtaTemplate):
         self.cancel_all()
 
         am = self.am
-        am.update_bar(bar)
+        am.update_bar(bar, bar.new_minute)
         if not am.inited:
             return
 
         self.vqi = self.get_vqi_value()
         self.pre_vqi = self.vqi
 
+        buy = self.vqi > 0.0
+        close_price = bar.close_price
+        if bar.ask_price is not None:
+            if buy:
+                close_price = ceil_to(bar.ask_price, self.pricetick)
+            else:
+                close_price = floor_to(bar.bid_price, self.pricetick)
+
         # buy
-        if self.vqi > 0.0:
+        if buy:
             if self.pos == 0:
-                self.buy(bar.close_price, 1)
+                self.buy(close_price, 1)
             elif self.pos < 0:
-                self.cover(bar.close_price, 1)
-                self.buy(bar.close_price, 1)
+                self.cover(close_price, 1)
+                self.buy(close_price, 1)
         # sell
         else:
             if self.pos == 0:
-                self.short(bar.close_price, 1)
+                self.short(close_price, 1)
             elif self.pos > 0:
-                self.sell(bar.close_price, 1)
-                self.short(bar.close_price, 1)
+                self.sell(close_price, 1)
+                self.short(close_price, 1)
 
         self.put_event()
 
