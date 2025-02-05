@@ -62,7 +62,7 @@ class DoubleMaStrategy(CtaTemplate):
         """
         self.bg.update_tick(tick)
 
-    def on_bar(self, bar: BarData):
+    def on_bar(self, bar: BarData, new_minute: bool = True):
         """
         Callback of new bar data update.
         """

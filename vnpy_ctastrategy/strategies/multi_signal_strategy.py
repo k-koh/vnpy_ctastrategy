@@ -194,7 +194,7 @@ class MultiSignalStrategy(TargetPosTemplate):
 
         self.calculate_target_pos()
 
-    def on_bar(self, bar: BarData):
+    def on_bar(self, bar: BarData, new_minute: bool = True):
         """
         Callback of new bar data update.
         """

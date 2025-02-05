@@ -78,7 +78,7 @@ class TestStrategy(CtaTemplate):
 
         self.put_event()
 
-    def on_bar(self, bar: BarData):
+    def on_bar(self, bar: BarData, new_minute: bool = True):
         """
         Callback of new bar data update.
         """

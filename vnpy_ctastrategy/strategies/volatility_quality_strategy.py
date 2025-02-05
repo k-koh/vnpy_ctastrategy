@@ -68,17 +68,17 @@ class VolatilityQualityStrategy(CtaTemplate):
         """
         Callback of new tick data update.
         """
-        bar = self.bg.update_tick(tick)
-        self.on_bar(bar)
+        bar, new_minute = self.bg.update_tick(tick)
+        self.on_bar(bar, new_minute)
 
-    def on_bar(self, bar: BarData):
+    def on_bar(self, bar: BarData, new_minute: bool = True):
         """
         Callback of new bar data update.
         """
         self.cancel_all()
 
         am = self.am
-        am.update_bar(bar, bar.new_minute)
+        am.update_bar(bar, new_minute)
         if not am.inited:
             return
 

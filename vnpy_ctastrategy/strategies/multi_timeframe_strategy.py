@@ -72,7 +72,7 @@ class MultiTimeframeStrategy(CtaTemplate):
         """
         self.bg5.update_tick(tick)
 
-    def on_bar(self, bar: BarData):
+    def on_bar(self, bar: BarData, new_minute: bool = True):
         """
         Callback of new bar data update.
         """
