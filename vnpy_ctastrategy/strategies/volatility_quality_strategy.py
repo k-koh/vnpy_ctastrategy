@@ -24,7 +24,7 @@ class VolatilityQualityStrategy(CtaTemplate):
     # parameters
     vqi_period     = 5
     vqi_smoothing  = 2
-    vqi_filter     = 1
+    vqi_filter     = 2
     vqi_ma_method  = 3 # 3 = MODE_LWMA
     currency_point = 1 # 1 = 1点
     pricetick      = 5.0
