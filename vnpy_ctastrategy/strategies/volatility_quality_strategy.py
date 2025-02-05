@@ -87,12 +87,6 @@ class VolatilityQualityStrategy(CtaTemplate):
 
         buy = self.vqi > 0.0
         close_price = bar.close_price
-        if bar.ask_price is not None:
-            if buy:
-                close_price = ceil_to(bar.ask_price, self.pricetick)
-            else:
-                close_price = floor_to(bar.bid_price, self.pricetick)
-
         # buy
         if buy:
             if self.pos == 0:
