@@ -22,7 +22,7 @@ from vnpy.trader.object import (
     BarData,
     OrderData,
     TradeData,
-    ContractData,
+    ContractData, PositionData,
 )
 from vnpy.trader.event import (
     EVENT_TICK,

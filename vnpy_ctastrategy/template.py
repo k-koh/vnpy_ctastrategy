@@ -32,6 +32,11 @@ class CtaTemplate(ABC):
         self.trading: bool = False
         self.pos: int = 0
 
+        self.long_pos: int = 0
+        self.short_pos: int = 0
+        self.long_price: float = 0
+        self.short_price: float = 0
+
         # Copy a new variables list here to avoid duplicate insert when multiple
         # strategy instances are created with the same strategy class.
         self.variables = copy(self.variables)
@@ -258,6 +263,14 @@ class CtaTemplate(ABC):
         """
         if self.trading:
             self.cta_engine.cancel_order(self, vt_orderid)
+
+    def cancel_orders(self, vt_orderids: list) -> None:
+        """
+        Cancel existing orders.
+        """
+        if self.trading:
+            for vt_orderid in copy(vt_orderids):
+                self.cta_engine.cancel_order(self, vt_orderid)
 
     def cancel_all(self) -> None:
         """
