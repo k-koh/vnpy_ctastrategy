@@ -62,7 +62,7 @@ class RTHStrategy(CtaTemplate):
         super().__init__(cta_engine, strategy_name, vt_symbol, setting)
         self.bg = BarGenerator(self.on_bar, self.bar_window, self.on_xmin_bar)
         self.am = ArrayManager()
-        self.pre_bar = None
+        self.prev_bar = None
         self.cur_bar = None
         self.interval = Interval.MINUTE5
         self.process_time = datetime.now(DB_TZ)
@@ -124,7 +124,7 @@ class RTHStrategy(CtaTemplate):
             self.bg.update_bar(bar)
 
         if new_minute:
-            self.pre_bar      = self.cur_bar
+            self.prev_bar      = self.cur_bar
             self.close_time   = bar.datetime + timedelta(minutes=self.bar_window) - self.INTER_TIME
             self.close_tm     = self.close_time.strftime("%H:%M:%S")
             self.enable_open = True
@@ -152,6 +152,8 @@ class RTHStrategy(CtaTemplate):
         trend = TrendType.SIDE
         # 上一个bar的上影线超过35，判定为下降趋势
         if self.vqi > 0:
+            trend = TrendType.UP
+        elif self.is_hammer(self.prev_bar):
             trend = TrendType.UP
         elif self.vqi < 0:
             trend = TrendType.DOWN
@@ -350,6 +352,39 @@ class RTHStrategy(CtaTemplate):
             return vqi
         else:
             return 0.0
+
+    def is_hammer(self, bar: BarData) -> bool:
+        """
+        判断是否锤子线
+        """
+        # full_len = bar.high_price - bar.low_price
+        # if full_len == 0:
+        #     return False
+
+        # 计算实体部分、高低影线
+        body = abs(bar.close_price - bar.open_price)
+        lower_shadow = min(bar.close_price, bar.open_price) - bar.low_price
+        upper_shadow = bar.high_price - max(bar.close_price, bar.open_price)
+
+        # shadow_high = min(bar.close_price, bar.open_price)
+        # shadow_low  = bar.low_price
+        # # 计算前一根 K 线的实体范围
+        # prev_body_high = max(prev_bar.close_price, prev_bar.open_price)
+        # prev_body_low = min(prev_bar.close_price, prev_bar.open_price)
+
+        # 判断 Hammer 条件：
+        hammer_condition = (
+                (5.0 <= body <= 15.0) and # 实体长度在 5-15 点之间
+                (lower_shadow >= 3 * body) and  # 下影线至少是实体的 3 倍
+                (upper_shadow < 0.3 * lower_shadow)  # 上影线很短
+        )
+
+        # # 判断下影线与前一根 K 线实体部分的重叠是否较少（< 30%）
+        # overlap = max(0, min(shadow_high, prev_body_high) - max(shadow_low, prev_body_low))
+        # prev_body_range = prev_body_high - prev_body_low if prev_body_high != prev_body_low else 1  # 避免除零
+        # low_overlap_condition = (overlap / prev_body_range) < 0.3  # 重叠部分小于前一根 K 线实体 30%
+
+        return hammer_condition
 
     def on_order(self, order: OrderData):
         """
