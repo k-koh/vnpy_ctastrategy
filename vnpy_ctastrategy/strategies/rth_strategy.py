@@ -54,7 +54,7 @@ class RTHStrategy(CtaTemplate):
     close_tm = None # 平仓时间
 
 
-    parameters = ["vqi_period", "vqi_smoothing", "vqi_filter", "vqi_ma_method"]
+    parameters = ["vqi_period", "vqi_smoothing", "stop_loss"]
     variables = ["vqi", "vqi0", "trend", "close_price", "sma5_close", "close_tm"]
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
