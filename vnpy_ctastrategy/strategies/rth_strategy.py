@@ -44,7 +44,7 @@ class RTHStrategy(CtaTemplate):
 
     # variables
     vqi = 0.0
-    vqi0 = 0.0
+    prev_vqi = 0.0
     trend = TrendType.SIDE.value
     close_price = 0.0
     sma5_close = 0.0
@@ -55,7 +55,7 @@ class RTHStrategy(CtaTemplate):
 
 
     parameters = ["vqi_period", "vqi_smoothing", "stop_loss"]
-    variables = ["vqi", "vqi0", "trend", "close_price", "sma5_close", "close_tm"]
+    variables = ["vqi", "prev_vqi", "trend", "close_price", "sma5_close", "close_tm"]
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
         """"""
@@ -124,6 +124,7 @@ class RTHStrategy(CtaTemplate):
             self.bg.update_bar(bar)
 
         if new_minute:
+            self.prev_vqi      = self.vqi
             self.prev_bar      = self.cur_bar
             self.close_time   = bar.datetime + timedelta(minutes=self.bar_window) - self.INTER_TIME
             self.close_tm     = self.close_time.strftime("%H:%M:%S")
@@ -146,14 +147,13 @@ class RTHStrategy(CtaTemplate):
         # 取得最后一个bar的vqi值
         pre_vqi = 0.0
         self.vqi = self.caculate_vqi(self.vqi_smoothing)
-        self.vqi0 = self.caculate_vqi(0)
 
         # trend
         trend = TrendType.SIDE
         # 上一个bar的上影线超过35，判定为下降趋势
         if self.vqi > 0:
             trend = TrendType.UP
-        elif self.is_hammer(self.prev_bar):
+        elif self.prev_vqi < 0 and self.is_hammer(self.prev_bar):
             trend = TrendType.UP
         elif self.vqi < 0:
             trend = TrendType.DOWN
@@ -185,6 +185,7 @@ class RTHStrategy(CtaTemplate):
                     if not exist:
                         self.write_log(f"stop_loss cover(buy): {close_price}")
                         self.cover(close_price, 1)
+                        self.enable_open = False
 
             if self.pos > 0 and close_price <= self.long_price - self.stop_loss:
                 canceled = self.cancel_no_target_orders(close_price, Direction.SHORT, Offset.CLOSE)
@@ -193,9 +194,10 @@ class RTHStrategy(CtaTemplate):
                     if not exist:
                         self.write_log(f"stop_loss sell: {close_price}")
                         self.sell(close_price, 1)
+                        self.enable_open = False
 
             # 到达每个bar的结束时间，用close_price先平仓
-            if self.process_time >= self.close_time:
+            if self.process_time >= self.close_time or new_minute:
                 if self.pos > 0:
                     canceled = self.cancel_no_target_orders(close_price, Direction.SHORT, Offset.CLOSE)
                     if canceled:
