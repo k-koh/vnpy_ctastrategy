@@ -36,7 +36,7 @@ class RTHStrategy(CtaTemplate):
     vqi_ma_method  = 3 # 3 = MODE_LWMA
     currency_point = 1 # 1 = 1点
     pricetick      = 5.0
-    stop_loss      = 25.0
+    stop_loss      = 20.0
 
     trailing_start = 100.0
     trailing_point = 20.0
@@ -130,10 +130,14 @@ class RTHStrategy(CtaTemplate):
             self.close_tm     = self.close_time.strftime("%H:%M:%S")
             self.enable_open = True
             bar_time = bar.datetime.strftime("%H:%M:%S")
-            # 日本股市开市时间 9:00-9:15 停止交易
-            # 美国经济指标发布时间 22:30-22:45 停止交易
+            # 日本股市开市时间 8:45-9:15 12:30-12:45 15:35-17:15停止交易
+            # 美国经济指标发布时间 21:30-21:45 22:30-22:45 停止交易
             # 美国股市开市时间 23:30-23:45 停止交易
-            if ("09:00:00" <= bar_time < "09:15:00") or ("22:30:00" <= bar_time < "22:45:00") or (
+            if ("09:00:00" <= bar_time < "09:15:00") or (
+                    "12:30:00" <= bar_time < "12:45:00") or (
+                    "15:35:00" <= bar_time < "17:15:00") or (
+                    "21:30:00" <= bar_time < "21:45:00") or (
+                    "22:30:00" <= bar_time < "22:45:00") or (
                     "23:30:00" <= bar_time < "23:45:00"):
                 self.enable_open = False
             self.write_log(f"new_minute: {bar.datetime}")
