@@ -251,6 +251,7 @@ class RTHStrategy(CtaTemplate):
 
             # 等待信号有趋势时候再开仓
             if self.pos == 0 and self.enable_open:
+                price_match = False
                 # buy
                 if trend == TrendType.UP:
                     # 信号转变为买，买开仓
@@ -262,6 +263,7 @@ class RTHStrategy(CtaTemplate):
                             self.write_log(f"buy: {self.sma5_close}")
                             self.buy(self.sma5_close, 1)
                             self.long_price = self.sma5_close
+                            price_match = True
                             # self.trailing_stop_long.started = False
                             # self.trailing_stop_short.started = False
 
@@ -276,12 +278,32 @@ class RTHStrategy(CtaTemplate):
                             self.write_log(f"short: {self.sma5_close}")
                             self.short(self.sma5_close, 1)
                             self.short_price = self.sma5_close
+                            price_match = True
                             # self.trailing_stop_long.started = False
                             # self.trailing_stop_short.started = False
 
                 # no signal
                 else:
                     self.cancel_all()
+
+                if not price_match:
+                    if close_price > self.prev_bar.high_price:
+                        canceled = self.cancel_no_target_orders(close_price, Direction.LONG, Offset.OPEN)
+                        if canceled:
+                            exist = self.exist_target_orders(close_price, Direction.LONG, Offset.OPEN)
+                            if not exist:
+                                self.write_log(f"breakout buy: {close_price}")
+                                self.buy(close_price, 1)
+                                self.long_price = close_price
+
+                    elif close_price < self.prev_bar.low_price:
+                        canceled = self.cancel_no_target_orders(close_price, Direction.SHORT, Offset.OPEN)
+                        if canceled:
+                            exist = self.exist_target_orders(close_price, Direction.SHORT, Offset.OPEN)
+                            if not exist:
+                                self.write_log(f"breakout short: {close_price}")
+                                self.short(close_price, 1)
+                                self.short_price = close_price
 
         # 更新UI界面
         self.put_event()
