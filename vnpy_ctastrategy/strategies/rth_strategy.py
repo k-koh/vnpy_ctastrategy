@@ -36,7 +36,7 @@ class RTHStrategy(CtaTemplate):
     vqi_ma_method  = 3 # 3 = MODE_LWMA
     currency_point = 1 # 1 = 1点
     pricetick      = 5.0
-    stop_loss      = 20.0
+    stop_loss      = 25.0
 
     trailing_start = 100.0
     trailing_point = 20.0
