@@ -50,7 +50,7 @@ class RTHStrategy(CtaTemplate):
     sma5_close = 0.0
     enable_open = False # 是否允许开仓, 只有在新的bar才允许开仓
     time_close = False  # 是否到达时间平仓
-    INTER_TIME = timedelta(seconds=5)  # 交易时间间隔 5秒
+    INTER_TIME = timedelta(seconds=30)  # 交易时间间隔 5秒
     close_time: datetime = None  # 平仓时间
     close_tm = None # 平仓时间
 
