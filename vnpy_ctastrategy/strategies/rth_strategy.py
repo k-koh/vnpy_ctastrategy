@@ -49,6 +49,7 @@ class RTHStrategy(CtaTemplate):
     close_price = 0.0
     sma5_close = 0.0
     enable_open = False # 是否允许开仓, 只有在新的bar才允许开仓
+    time_close = False  # 是否到达时间平仓
     INTER_TIME = timedelta(seconds=5)  # 交易时间间隔 5秒
     close_time: datetime = None  # 平仓时间
     close_tm = None # 平仓时间
@@ -201,7 +202,7 @@ class RTHStrategy(CtaTemplate):
                         self.enable_open = False
 
             # 到达每个bar的结束时间，用close_price先平仓
-            if self.process_time >= self.close_time or new_minute:
+            if self.process_time >= self.close_time or self.time_close:
                 if self.pos > 0:
                     canceled = self.cancel_no_target_orders(close_price, Direction.SHORT, Offset.CLOSE)
                     if canceled:
@@ -210,6 +211,7 @@ class RTHStrategy(CtaTemplate):
                             self.write_log(f"time_close sell: {close_price}")
                             self.sell(close_price, 1)
                             self.enable_open = False
+                            self.time_close = True
 
                 elif self.pos < 0:
                     canceled = self.cancel_no_target_orders(close_price, Direction.LONG, Offset.CLOSE)
@@ -219,6 +221,7 @@ class RTHStrategy(CtaTemplate):
                             self.write_log(f"time_close cover(buy): {close_price}")
                             self.cover(close_price, 1)
                             self.enable_open = False
+                            self.time_close = True
 
             # # 移动止盈线
             # if self.pos < 0:
@@ -262,6 +265,7 @@ class RTHStrategy(CtaTemplate):
                             self.write_log(f"buy: {self.sma5_close}")
                             self.buy(self.sma5_close, 1)
                             self.long_price = self.sma5_close
+                            self.time_close = False
                             # self.trailing_stop_long.started = False
                             # self.trailing_stop_short.started = False
 
@@ -276,6 +280,7 @@ class RTHStrategy(CtaTemplate):
                             self.write_log(f"short: {self.sma5_close}")
                             self.short(self.sma5_close, 1)
                             self.short_price = self.sma5_close
+                            self.time_close = False
                             # self.trailing_stop_long.started = False
                             # self.trailing_stop_short.started = False
 
