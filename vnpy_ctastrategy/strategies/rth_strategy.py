@@ -50,7 +50,7 @@ class RTHStrategy(CtaTemplate):
     sma5_close = 0.0
     enable_open = False # 是否允许开仓, 只有在新的bar才允许开仓
     time_close = False  # 是否到达时间平仓
-    INTER_TIME = timedelta(seconds=30)  # 交易时间间隔 5秒
+    INTER_TIME = timedelta(seconds=30)  # 交易时间间隔 30秒
     close_time: datetime = None  # 平仓时间
     close_tm = None # 平仓时间
 
@@ -269,20 +269,20 @@ class RTHStrategy(CtaTemplate):
                             # self.trailing_stop_long.started = False
                             # self.trailing_stop_short.started = False
 
-                # sell
-                elif trend == TrendType.DOWN:
-                    # 信号转变为卖，卖开仓
-                    # 取消不是目标价位的活跃订单
-                    canceled = self.cancel_no_target_orders(self.sma5_close, Direction.SHORT, Offset.OPEN)
-                    if canceled:
-                        exist = self.exist_target_orders(self.sma5_close, Direction.SHORT, Offset.OPEN)
-                        if not exist:
-                            self.write_log(f"short: {self.sma5_close}")
-                            self.short(self.sma5_close, 1)
-                            self.short_price = self.sma5_close
-                            self.time_close = False
-                            # self.trailing_stop_long.started = False
-                            # self.trailing_stop_short.started = False
+                # # sell
+                # elif trend == TrendType.DOWN:
+                #     # 信号转变为卖，卖开仓
+                #     # 取消不是目标价位的活跃订单
+                #     canceled = self.cancel_no_target_orders(self.sma5_close, Direction.SHORT, Offset.OPEN)
+                #     if canceled:
+                #         exist = self.exist_target_orders(self.sma5_close, Direction.SHORT, Offset.OPEN)
+                #         if not exist:
+                #             self.write_log(f"short: {self.sma5_close}")
+                #             self.short(self.sma5_close, 1)
+                #             self.short_price = self.sma5_close
+                #             self.time_close = False
+                #             # self.trailing_stop_long.started = False
+                #             # self.trailing_stop_short.started = False
 
                 # no signal
                 else:
