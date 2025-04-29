@@ -25,18 +25,18 @@ from vnpy_ctastrategy import (
 class RTHStrategy(CtaTemplate):
     """"""
 
-    author = "用Python的交易员"
+    author = "日経225先物自動売買"
 
-    bar_window     = 5
+    bar_window     = 5 # need to change for other timeframes(5m, 15m, 1h, 1d)
 
     # parameters
-    vqi_period     = 5
+    vqi_period     = 5 # no need to change for other timeframes(5m, 15m, 1h, 1d)
     vqi_smoothing  = 2
     vqi_filter     = 2
     vqi_ma_method  = 3 # 3 = MODE_LWMA
     currency_point = 1 # 1 = 1点
     pricetick      = 5.0
-    stop_loss      = 25.0
+    stop_loss      = 50.0
 
     trailing_start = 100.0
     trailing_point = 20.0
@@ -45,18 +45,16 @@ class RTHStrategy(CtaTemplate):
     # variables
     vqi = 0.0
     prev_vqi = 0.0
-    trend = TrendType.SIDE.value
     close_price = 0.0
-    sma5_close = 0.0
+    sma_close = 0.0
     enable_open = False # 是否允许开仓, 只有在新的bar才允许开仓
     time_close = False  # 是否到达时间平仓
     INTER_TIME = timedelta(seconds=30)  # 交易时间间隔 30秒
     close_time: datetime = None  # 平仓时间
-    close_tm = None # 平仓时间
 
 
     parameters = ["vqi_period", "vqi_smoothing", "stop_loss"]
-    variables = ["vqi", "prev_vqi", "trend", "close_price", "sma5_close", "close_tm"]
+    variables = ["vqi", "prev_vqi", "close_price"]
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
         """"""
@@ -76,21 +74,21 @@ class RTHStrategy(CtaTemplate):
         """
         Callback when strategy is inited.
         """
-        self.write_log("策略初始化")
+        self.write_log("自動売買初期化")
         self.load_bar(10, interval=self.interval, callback=self.on_bar_process)
 
     def on_start(self):
         """
         Callback when strategy is started.
         """
-        self.write_log("策略启动")
+        self.write_log("自動売買開始")
         self.put_event()
 
     def on_stop(self):
         """
         Callback when strategy is stopped.
         """
-        self.write_log("策略停止")
+        self.write_log("自動売買停止")
         self.put_event()
 
     def on_tick(self, tick: TickData):
@@ -128,18 +126,16 @@ class RTHStrategy(CtaTemplate):
             self.prev_vqi      = self.vqi
             self.prev_bar      = self.cur_bar
             self.close_time   = bar.datetime + timedelta(minutes=self.bar_window) - self.INTER_TIME
-            self.close_tm     = self.close_time.strftime("%H:%M:%S")
             self.enable_open = True
             bar_time = bar.datetime.strftime("%H:%M:%S")
-            # 日本股市开市时间 8:45-9:15 12:30-12:45 15:35-17:15停止交易
-            # 美国经济指标发布时间 21:30-21:45 22:30-22:45 停止交易
-            # 美国股市开市时间 23:30-23:45 停止交易
-            if ("09:00:00" <= bar_time < "09:15:00") or (
-                    "12:30:00" <= bar_time < "12:45:00") or (
-                    "15:35:00" <= bar_time < "17:15:00") or (
-                    "21:30:00" <= bar_time < "21:45:00") or (
-                    "22:30:00" <= bar_time < "22:45:00") or (
-                    "23:30:00" <= bar_time < "23:45:00"):
+            # 日本股市开市时间 9:00-9:30 15:40-17:30 停止交易
+            # 美国经济指标发布时间 21:30-22:00 停止交易
+            # 美国股市开市时间 22:30-23:00 停止交易
+            if ("09:00:00" <= bar_time < "09:30:00") or (
+                    "15:40:00" <= bar_time < "17:00:00") or (
+                    "17:00:00" <= bar_time < "17:30:00") or (
+                    "21:30:00" <= bar_time < "22:00:00") or (
+                    "22:30:00" <= bar_time < "23:00:00"):
                 self.enable_open = False
             self.write_log(f"new_minute: {bar.datetime}")
         self.cur_bar = bar
@@ -150,8 +146,9 @@ class RTHStrategy(CtaTemplate):
             return
 
         # 取得最后一个bar的vqi值
-        pre_vqi = 0.0
         self.vqi = self.caculate_vqi(self.vqi_smoothing)
+        # vqi小数点を２桁に丸める
+        self.vqi = round_to(self.vqi, 0.01)
 
         # trend
         trend = TrendType.SIDE
@@ -162,17 +159,17 @@ class RTHStrategy(CtaTemplate):
             trend = TrendType.UP
         elif self.vqi < 0:
             trend = TrendType.DOWN
-        self.trend = trend.value
         # close price
         close_price = round_to(bar.close_price, self.pricetick)
         self.close_price = close_price
-        # sma5 close
-        sma5 = talib.SMA(am.close, timeperiod=3)
-        self.sma5_close = round_to(sma5[-1], self.pricetick)
-        if trend == TrendType.UP:
-            self.sma5_close = min(close_price, round_to(sma5[-1], self.pricetick))
-        elif trend == TrendType.DOWN:
-            self.sma5_close = max(close_price, round_to(sma5[-1], self.pricetick))
+        self.sma_close = close_price
+        # # sma3 close
+        # sma3 = talib.SMA(am.close, timeperiod=3)
+        # self.sma_close = round_to(sma3[-1], self.pricetick)
+        # if trend == TrendType.UP:
+        #     self.sma_close = min(close_price, round_to(sma3[-1], self.pricetick))
+        # elif trend == TrendType.DOWN:
+        #     self.sma_close = max(close_price, round_to(sma3[-1], self.pricetick))
 
 
         if datetime.now(DB_TZ) - self.process_time <= timedelta(milliseconds=200):
@@ -183,7 +180,7 @@ class RTHStrategy(CtaTemplate):
 
         if self.trading:
             # 强制止损线
-            if self.pos < 0 and close_price >= self.short_price + self.stop_loss:
+            if self.pos < 0 and (close_price >= self.short_price + self.stop_loss):
                 canceled = self.cancel_no_target_orders(close_price, Direction.LONG, Offset.CLOSE)
                 if canceled:
                     exist = self.exist_target_orders(close_price, Direction.LONG, Offset.CLOSE)
@@ -192,7 +189,7 @@ class RTHStrategy(CtaTemplate):
                         self.cover(close_price, 1)
                         self.enable_open = False
 
-            if self.pos > 0 and close_price <= self.long_price - self.stop_loss:
+            if self.pos > 0 and (close_price <= self.long_price - self.stop_loss):
                 canceled = self.cancel_no_target_orders(close_price, Direction.SHORT, Offset.CLOSE)
                 if canceled:
                     exist = self.exist_target_orders(close_price, Direction.SHORT, Offset.CLOSE)
@@ -258,31 +255,31 @@ class RTHStrategy(CtaTemplate):
                 if trend == TrendType.UP:
                     # 信号转变为买，买开仓
                     # 取消不是目标价位的活跃订单
-                    canceled = self.cancel_no_target_orders(self.sma5_close, Direction.LONG, Offset.OPEN)
+                    canceled = self.cancel_no_target_orders(self.sma_close, Direction.LONG, Offset.OPEN)
                     if canceled:
-                        exist = self.exist_target_orders(self.sma5_close, Direction.LONG, Offset.OPEN)
+                        exist = self.exist_target_orders(self.sma_close, Direction.LONG, Offset.OPEN)
                         if not exist:
-                            self.write_log(f"buy: {self.sma5_close}")
-                            self.buy(self.sma5_close, 1)
-                            self.long_price = self.sma5_close
+                            self.write_log(f"buy: {self.sma_close}")
+                            self.buy(self.sma_close, 1)
+                            self.long_price = self.sma_close
                             self.time_close = False
                             # self.trailing_stop_long.started = False
                             # self.trailing_stop_short.started = False
 
-                # # sell
-                # elif trend == TrendType.DOWN:
-                #     # 信号转变为卖，卖开仓
-                #     # 取消不是目标价位的活跃订单
-                #     canceled = self.cancel_no_target_orders(self.sma5_close, Direction.SHORT, Offset.OPEN)
-                #     if canceled:
-                #         exist = self.exist_target_orders(self.sma5_close, Direction.SHORT, Offset.OPEN)
-                #         if not exist:
-                #             self.write_log(f"short: {self.sma5_close}")
-                #             self.short(self.sma5_close, 1)
-                #             self.short_price = self.sma5_close
-                #             self.time_close = False
-                #             # self.trailing_stop_long.started = False
-                #             # self.trailing_stop_short.started = False
+                # sell
+                elif trend == TrendType.DOWN:
+                    # 信号转变为卖，卖开仓
+                    # 取消不是目标价位的活跃订单
+                    canceled = self.cancel_no_target_orders(self.sma_close, Direction.SHORT, Offset.OPEN)
+                    if canceled:
+                        exist = self.exist_target_orders(self.sma_close, Direction.SHORT, Offset.OPEN)
+                        if not exist:
+                            self.write_log(f"short: {self.sma_close}")
+                            self.short(self.sma_close, 1)
+                            self.short_price = self.sma_close
+                            self.time_close = False
+                            # self.trailing_stop_long.started = False
+                            # self.trailing_stop_short.started = False
 
                 # no signal
                 else:
@@ -358,7 +355,6 @@ class RTHStrategy(CtaTemplate):
         max_p = max(h - l, max(h - c2, c2 - l))
         if (max_p != 0 and (h - l) != 0):
             VQ = abs(((c - c2) / max_p + (c - o) / (h - l)) * 0.5) * ((c - c2 + (c - o)) * 0.5)
-            # vqi = pre_vqi if abs(VQ) < self.vqi_filter * self.currency_point else VQ
             vqi = VQ
             return vqi
         else:
