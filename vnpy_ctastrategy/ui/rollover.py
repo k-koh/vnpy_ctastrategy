@@ -1,6 +1,6 @@
 from datetime import datetime
 from time import sleep
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 from copy import copy
 
 from vnpy.trader.engine import MainEngine
@@ -25,7 +25,7 @@ class RolloverTool(QtWidgets.QDialog):
         """"""
         super().__init__()
 
-        self.cta_manager: "CtaManager" = cta_manager
+        self.cta_manager: CtaManager = cta_manager
         self.cta_engine: CtaEngine = cta_manager.cta_engine
         self.main_engine: MainEngine = cta_manager.main_engine
 
@@ -75,12 +75,12 @@ class RolloverTool(QtWidgets.QDialog):
     def write_log(self, text: str) -> None:
         """"""
         now: datetime = datetime.now()
-        text: str = now.strftime("%H:%M:%S\t") + text
+        text = now.strftime("%H:%M:%S\t") + text
         self.log_edit.append(text)
 
     def subscribe(self, vt_symbol: str) -> None:
         """"""
-        contract: Optional[ContractData] = self.main_engine.get_contract(vt_symbol)
+        contract: ContractData | None = self.main_engine.get_contract(vt_symbol)
         if not contract:
             return
 
@@ -95,7 +95,7 @@ class RolloverTool(QtWidgets.QDialog):
         self.subscribe(new_symbol)
         sleep(1)
 
-        new_tick: Optional[TickData] = self.main_engine.get_tick(new_symbol)
+        new_tick: TickData | None = self.main_engine.get_tick(new_symbol)
         if not new_tick:
             self.write_log(_("无法获取目标合约{}的盘口数据，请先订阅行情").format(new_symbol))
             return
@@ -151,7 +151,7 @@ class RolloverTool(QtWidgets.QDialog):
 
         # Roll short postiion
         if holding.short_pos:
-            volume: float = holding.short_pos
+            volume = holding.short_pos
 
             self.send_order(
                 old_symbol,
@@ -218,8 +218,11 @@ class RolloverTool(QtWidgets.QDialog):
         """
         max_volume: int = self.max_volume_spin.value()
 
-        contract: Optional[ContractData] = self.main_engine.get_contract(vt_symbol)
-        tick: Optional[TickData] = self.main_engine.get_tick(vt_symbol)
+        contract: ContractData | None = self.main_engine.get_contract(vt_symbol)
+        tick: TickData | None = self.main_engine.get_tick(vt_symbol)
+
+        if not contract or not tick:
+            return
 
         if direction == Direction.LONG:
             price = tick.ask_price_1 + contract.pricetick * payup
@@ -227,7 +230,7 @@ class RolloverTool(QtWidgets.QDialog):
             price = tick.bid_price_1 - contract.pricetick * payup
 
         while True:
-            order_volume: int = min(volume, max_volume)
+            order_volume: float = min(volume, max_volume)
 
             original_req: OrderRequest = OrderRequest(
                 symbol=contract.symbol,
@@ -240,7 +243,7 @@ class RolloverTool(QtWidgets.QDialog):
                 reference=f"{APP_NAME}_Rollover"
             )
 
-            req_list: List[OrderRequest] = self.main_engine.convert_order_request(
+            req_list: list[OrderRequest] = self.main_engine.convert_order_request(
                 original_req,
                 contract.gateway_name,
                 False,

@@ -1,5 +1,3 @@
-from typing import Dict
-
 from vnpy.event import Event, EventEngine
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtGui, QtWidgets
@@ -35,7 +33,7 @@ class CtaManager(QtWidgets.QWidget):
         self.event_engine: EventEngine = event_engine
         self.cta_engine: CtaEngine = main_engine.get_engine(APP_NAME)
 
-        self.managers: Dict[str, StrategyManager] = {}
+        self.managers: dict[str, StrategyManager] = {}
 
         self.init_ui()
         self.register_event()
@@ -135,7 +133,7 @@ class CtaManager(QtWidgets.QWidget):
             EVENT_CTA_STRATEGY, self.signal_strategy.emit
         )
 
-    def process_strategy_event(self, event) -> None:
+    def process_strategy_event(self, event: Event) -> None:
         """
         Update strategy status onto its monitor.
         """
@@ -146,13 +144,13 @@ class CtaManager(QtWidgets.QWidget):
             manager: StrategyManager = self.managers[strategy_name]
             manager.update_data(data)
         else:
-            manager: StrategyManager = StrategyManager(self, self.cta_engine, data)
+            manager = StrategyManager(self, self.cta_engine, data)
             self.scroll_layout.insertWidget(0, manager)
             self.managers[strategy_name] = manager
 
             self.update_strategy_combo()
 
-    def remove_strategy(self, strategy_name) -> None:
+    def remove_strategy(self, strategy_name: str) -> None:
         """"""
         manager: StrategyManager = self.managers.pop(strategy_name)
         manager.deleteLater()
@@ -208,7 +206,7 @@ class StrategyManager(QtWidgets.QFrame):
         self, cta_manager: CtaManager, cta_engine: CtaEngine, data: dict
     ) -> None:
         """"""
-        super(StrategyManager, self).__init__()
+        super().__init__()
 
         self.cta_manager: CtaManager = cta_manager
         self.cta_engine: CtaEngine = cta_engine
@@ -277,7 +275,7 @@ class StrategyManager(QtWidgets.QFrame):
         self.variables_monitor.update_data(data["variables"])
 
         # Update button status
-        variables: list = data["variables"]
+        variables: dict = data["variables"]
         inited: bool = variables["inited"]
         trading: bool = variables["trading"]
 
@@ -336,7 +334,7 @@ class DataMonitor(QtWidgets.QTableWidget):
 
     def __init__(self, data: dict) -> None:
         """"""
-        super(DataMonitor, self).__init__()
+        super().__init__()
 
         self._data: dict = data
         self.cells: dict = {}
@@ -423,17 +421,17 @@ class LogMonitor(BaseMonitor):
         """
         Stretch last column.
         """
-        super(LogMonitor, self).init_ui()
+        super().init_ui()
 
         self.horizontalHeader().setSectionResizeMode(
             1, QtWidgets.QHeaderView.ResizeMode.Stretch
         )
 
-    def insert_new_row(self, data) -> None:
+    def insert_new_row(self, data: dict) -> None:
         """
         Insert a new row at the top of table.
         """
-        super(LogMonitor, self).insert_new_row(data)
+        super().insert_new_row(data)
         self.resizeRowToContents(0)
 
 
@@ -446,7 +444,7 @@ class SettingEditor(QtWidgets.QDialog):
         self, parameters: dict, strategy_name: str = "", class_name: str = ""
     ) -> None:
         """"""
-        super(SettingEditor, self).__init__()
+        super().__init__()
 
         self.parameters: dict = parameters
         self.strategy_name: str = strategy_name
@@ -468,19 +466,19 @@ class SettingEditor(QtWidgets.QDialog):
             parameters.update(self.parameters)
         else:
             self.setWindowTitle(_("参数编辑：{}").format(self.strategy_name))
-            button_text: str = _("确定")
-            parameters: dict = self.parameters
+            button_text = _("确定")
+            parameters = self.parameters
 
         for name, value in parameters.items():
             type_: type = type(value)
 
             edit: QtWidgets.QLineEdit = QtWidgets.QLineEdit(str(value))
             if type_ is int:
-                validator: QtGui.QIntValidator = QtGui.QIntValidator()
-                edit.setValidator(validator)
+                int_validator: QtGui.QIntValidator = QtGui.QIntValidator()
+                edit.setValidator(int_validator)
             elif type_ is float:
-                validator: QtGui.QDoubleValidator = QtGui.QDoubleValidator()
-                edit.setValidator(validator)
+                double_validator: QtGui.QDoubleValidator = QtGui.QDoubleValidator()
+                edit.setValidator(double_validator)
 
             form.addRow(f"{name} {type_}", edit)
 
@@ -512,7 +510,7 @@ class SettingEditor(QtWidgets.QDialog):
             edit, type_ = tp
             value_text = edit.text()
 
-            if type_ == bool:
+            if type_ is bool:
                 if value_text == "True":
                     value = True
                 else:
