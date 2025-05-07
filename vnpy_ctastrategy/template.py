@@ -121,7 +121,6 @@ class CtaTemplate(ABC):
         """
         return
 
-    @virtual
     def on_bar(self, bar: BarData, new_minute: bool = True) -> None:
         """
         Callback of new bar data update.
@@ -410,7 +409,6 @@ class TargetPosTemplate(CtaTemplate):
         """
         self.last_tick = tick
 
-    @virtual
     def on_bar(self, bar: BarData, new_minute: bool = True) -> None:
         """
         Callback of new bar data update.
