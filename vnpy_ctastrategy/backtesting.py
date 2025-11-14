@@ -92,7 +92,7 @@ class BacktestingEngine:
         self.logs: list = []
 
         self.daily_results: dict[Date, DailyResult] = {}
-        self.daily_df: DataFrame
+        self.daily_df: DataFrame = DataFrame()
 
     def clear_data(self) -> None:
         """
@@ -285,7 +285,8 @@ class BacktestingEngine:
             for key, value in daily_result.__dict__.items():
                 results[key].append(value)
 
-        self.daily_df = DataFrame.from_dict(results).set_index("date")
+        if results:
+            self.daily_df = DataFrame.from_dict(results).set_index("date")
 
         self.output(_("逐日盯市盈亏计算完成"))
         return self.daily_df
@@ -405,7 +406,7 @@ class BacktestingEngine:
                 ewm_window: ExponentialMovingWindow = df["return"].ewm(halflife=self.half_life)
                 ewm_mean: Series = ewm_window.mean() * 100
                 ewm_std: Series = ewm_window.std() * 100
-                ewm_sharpe = ((ewm_mean - daily_risk_free) / ewm_std)[-1] * np.sqrt(self.annual_days)
+                ewm_sharpe = ((ewm_mean - daily_risk_free) / ewm_std).iloc[-1] * np.sqrt(self.annual_days)
             else:
                 sharpe_ratio = 0
                 ewm_sharpe = 0
@@ -491,7 +492,6 @@ class BacktestingEngine:
         self.output(_("策略统计指标计算完成"))
         return statistics
 
-    # def show_chart(self, df: DataFrame = None) -> None:
     def show_chart(self, df: DataFrame | None = None) -> go.Figure:
         """"""
         # Check DataFrame input exterior
@@ -499,7 +499,7 @@ class BacktestingEngine:
             df = self.daily_df
 
         # Check for init DataFrame
-        if df is None:
+        if df.empty:
             return
 
         fig = make_subplots(
@@ -568,7 +568,13 @@ class BacktestingEngine:
         optimization_setting: OptimizationSetting,
         output: bool = True,
         max_workers: int | None = None,
-        ngen_size: int = 30
+        pop_size: int = 100,
+        ngen: int = 30,
+        mu: int | None = None,
+        lambda_: int | None = None,
+        cxpb: float = 0.95,
+        mutpb: float | None = None,
+        indpb: float = 1.0
     ) -> list:
         """"""
         if not check_optimization_setting(optimization_setting):
@@ -580,7 +586,13 @@ class BacktestingEngine:
             optimization_setting,
             get_target_value,
             max_workers=max_workers,
-            ngen_size=ngen_size,
+            pop_size=pop_size,
+            ngen=ngen,
+            mu=mu,
+            lambda_=lambda_,
+            cxpb=cxpb,
+            mutpb=mutpb,
+            indpb=indpb,
             output=self.output
         )
 
@@ -1148,7 +1160,7 @@ def evaluate(
     engine.calculate_result()
     statistics: dict = engine.calculate_statistics(output=False)
 
-    target_value: float = statistics[target_name]
+    target_value: float = statistics.get(target_name, 0)
     return (setting, target_value, statistics)
 
 
