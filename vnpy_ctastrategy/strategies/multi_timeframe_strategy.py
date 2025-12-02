@@ -44,9 +44,11 @@ class MultiTimeframeStrategy(CtaTemplate):
         self.rsi_short = 50 - self.rsi_signal
 
         self.bg5 = BarGenerator(self.on_bar, 5, self.on_5min_bar)
+        self.bg5.main_engine = self.cta_engine.main_engine
         self.am5 = ArrayManager()
 
         self.bg15 = BarGenerator(self.on_bar, 15, self.on_15min_bar)
+        self.bg15.main_engine = self.cta_engine.main_engine
         self.am15 = ArrayManager()
 
         self.load_bar(10)

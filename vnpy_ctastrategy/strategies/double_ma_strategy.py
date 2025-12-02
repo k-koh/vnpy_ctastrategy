@@ -33,6 +33,7 @@ class DoubleMaStrategy(CtaTemplate):
         self.write_log("策略初始化")
 
         self.bg: BarGenerator = BarGenerator(self.on_bar)
+        self.bg.main_engine = self.cta_engine.main_engine
         self.am: ArrayManager = ArrayManager()
 
         self.load_bar(10)

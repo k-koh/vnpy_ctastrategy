@@ -153,8 +153,11 @@ class MultiSignalStrategy(TargetPosTemplate):
         self.write_log("策略初始化")
 
         self.rsi_signal: RsiSignal = RsiSignal(self.rsi_window, self.rsi_level)
+        self.rsi_signal.bg.main_engine = self.cta_engine.main_engine
         self.cci_signal: CciSignal = CciSignal(self.cci_window, self.cci_level)
+        self.cci_signal.bg.main_engine = self.cta_engine.main_engine
         self.ma_signal: MaSignal = MaSignal(self.fast_window, self.slow_window)
+        self.ma_signal.bg.main_engine = self.cta_engine.main_engine
 
         self.signal_pos: dict[str, int] = {
             "rsi": 0,

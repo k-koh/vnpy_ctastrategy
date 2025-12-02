@@ -60,6 +60,7 @@ class RTHStrategy(CtaTemplate):
         """"""
         super().__init__(cta_engine, strategy_name, vt_symbol, setting)
         self.bg = BarGenerator(self.on_bar, self.bar_window, self.on_xmin_bar)
+        self.bg.main_engine = self.cta_engine.main_engine
         self.am = ArrayManager()
         self.prev_bar = None
         self.cur_bar = None

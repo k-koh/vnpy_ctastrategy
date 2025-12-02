@@ -55,6 +55,7 @@ class AtrRsiStrategy(CtaTemplate):
         self.write_log("策略初始化")
 
         self.bg = BarGenerator(self.on_bar)
+        self.bg.main_engine = self.cta_engine.main_engine
         self.am = ArrayManager()
 
         self.rsi_buy = 50 + self.rsi_entry
